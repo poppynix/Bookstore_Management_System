@@ -31,7 +31,7 @@ function App() {
   const fetchBooks = async () => {
     try {
       // connecting to the PHP backend
-      const res = await axios.get('http://localhost/bookstore_backend/books.php');
+      const res = await axios.get('http://localhost/bookstore_database/books.php');
       setBooks(res.data);
     } catch (err) {
       console.error("Error fetching books:", err);
@@ -71,7 +71,7 @@ function App() {
   // Add Book
   const addBook = async (newBook) => {
     try {
-      await axios.post('http://localhost/bookstore_backend/books.php', newBook);
+      await axios.post('http://localhost/bookstore_database/books.php', newBook);
       alert("Book added successfully!");
       fetchBooks(); // Refresh the list
     } catch (err) {
@@ -84,7 +84,7 @@ function App() {
   const updateBook = async (updatedBook) => {
     try {
       // PHP expects the ISBN in the URL for updates
-      await axios.put(`http://localhost/bookstore_backend/books.php?isbn=${updatedBook.isbn}`, updatedBook);
+      await axios.put(`http://localhost/bookstore_database/books.php?isbn=${updatedBook.isbn}`, updatedBook);
       alert("Book updated successfully!");
       fetchBooks(); // Refresh the list
     } catch (err) {
@@ -96,7 +96,7 @@ function App() {
   // Delete Book
   const deleteBook = async (isbn) => {
     try {
-      await axios.delete(`http://localhost/bookstore_backend/books.php?isbn=${isbn}`);
+      await axios.delete(`http://localhost/bookstore_database/books.php?isbn=${isbn}`);
       alert("Book deleted successfully!");
       fetchBooks(); // Refresh the list
     } catch (err) {
