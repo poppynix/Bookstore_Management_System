@@ -1,0 +1,81 @@
+# Database files
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+
+# MySQL dumps and backups
+*.dump
+backup/
+*.backup
+
+# Environment and configuration files
+.env
+.env.local
+config.php
+db_config.php
+database.php
+credentials.php
+
+# PHP
+*.log
+.htaccess.local
+composer.phar
+composer.lock
+vendor/
+phpunit.xml
+*.cache
+
+# JavaScript/Node.js (if using any build tools)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+dist/
+.parcel-cache/
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# User uploaded files (book covers, user profiles, receipts)
+uploads/
+media/
+images/uploads/
+books/covers/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+logs/
+tmp/
+cache/
+sessions/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Sensitive data
+*.pem
+*.key
+*.cert
+.htpasswd
