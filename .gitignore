@@ -9,6 +9,7 @@
 backup/
 *.backup
 database/db_config.py
+db_connection.py
 
 # Environment and configuration files
 .env
