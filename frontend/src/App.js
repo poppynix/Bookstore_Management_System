@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import axios from 'axios'; // Import Axios for API calls
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -20,23 +21,32 @@ function App() {
   // --- 1. Global State ---
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || 'null'));
   const [cart, setCart] = useState(JSON.parse(localStorage.getItem('cart') || '[]'));
-  
-  // Initialize Books (Mock Data)
-  const [books, setBooks] = useState([
-    { isbn: '978-0-123456-47-2', title: 'Introduction to Algorithms', author: 'Thomas H. Cormen', publisher: 'MIT Press', year: 2009, price: 89.99, category: 'Science', stock: 15, threshold: 5 },
-    { isbn: '978-0-134685-99-1', title: 'Clean Code', author: 'Robert C. Martin', publisher: 'Prentice Hall', year: 2008, price: 45.99, category: 'Science', stock: 20, threshold: 10 },
-    { isbn: '978-0-596007-12-4', title: 'The Art of Computer Programming', author: 'Donald Knuth', publisher: 'Addison-Wesley', year: 2011, price: 199.99, category: 'Science', stock: 8, threshold: 5 },
-    { isbn: '978-1-449355-73-9', title: 'Learning Python', author: 'Mark Lutz', publisher: "O'Reilly Media", year: 2013, price: 64.99, category: 'Science', stock: 25 },
-    { isbn: '978-0-321573-51-3', title: 'The Pragmatic Programmer', author: 'Andrew Hunt', publisher: 'Addison-Wesley', year: 2019, price: 49.99, category: 'Science', stock: 12 }
-  ]);
+  const [books, setBooks] = useState([]); // Start with empty array, fetch later
 
+  // --- 2. Fetch Books from PHP Backend ---
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  const fetchBooks = async () => {
+    try {
+      // connecting to the PHP backend
+      const res = await axios.get('http://localhost/bookstore_backend/books.php');
+      setBooks(res.data);
+    } catch (err) {
+      console.error("Error fetching books:", err);
+    }
+  };
+
+  // Cart Persistence
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
-  // --- 2. Cart Functions ---
+  // --- 3. Cart Functions (Frontend Logic) ---
   const addToCart = (book) => {
-    if (book.stock <= 0) return alert("Out of Stock!");
+    // Check stock from the real database data
+    if (book.stock_quantity <= 0) return alert("Out of Stock!");
     
     setCart((prevCart) => {
       const existing = prevCart.find((item) => item.isbn === book.isbn);
@@ -56,17 +66,43 @@ function App() {
 
   const clearCart = () => setCart([]);
 
-  // --- 3. Book Management Functions (For Admin) ---
-  const addBook = (newBook) => {
-    setBooks([...books, newBook]);
+  // --- 4. Book Management Functions (Connected to Backend) ---
+  
+  // Add Book
+  const addBook = async (newBook) => {
+    try {
+      await axios.post('http://localhost/bookstore_backend/books.php', newBook);
+      alert("Book added successfully!");
+      fetchBooks(); // Refresh the list
+    } catch (err) {
+      console.error("Error adding book:", err);
+      alert("Failed to add book");
+    }
   };
 
-  const updateBook = (updatedBook) => {
-    setBooks(books.map(b => b.isbn === updatedBook.isbn ? updatedBook : b));
+  // Update Book
+  const updateBook = async (updatedBook) => {
+    try {
+      // PHP expects the ISBN in the URL for updates
+      await axios.put(`http://localhost/bookstore_backend/books.php?isbn=${updatedBook.isbn}`, updatedBook);
+      alert("Book updated successfully!");
+      fetchBooks(); // Refresh the list
+    } catch (err) {
+      console.error("Error updating book:", err);
+      alert("Failed to update book");
+    }
   };
 
-  const deleteBook = (isbn) => {
-    setBooks(books.filter(b => b.isbn !== isbn));
+  // Delete Book
+  const deleteBook = async (isbn) => {
+    try {
+      await axios.delete(`http://localhost/bookstore_backend/books.php?isbn=${isbn}`);
+      alert("Book deleted successfully!");
+      fetchBooks(); // Refresh the list
+    } catch (err) {
+      console.error("Error deleting book:", err);
+      alert("Failed to delete book");
+    }
   };
 
   const handleLogout = () => {
@@ -101,13 +137,11 @@ function App() {
 
       <div className="container" style={{ padding: '20px' }}>
         <Routes>
-          {/* Pass 'books' to Home so customers see the same list */}
           <Route path="/" element={<Home books={books} addToCart={addToCart} />} />
           <Route path="/login" element={<Login setUser={setUser} />} />
           <Route path="/register" element={<Register />} />
           <Route path="/cart" element={<Cart cartItems={cart} removeFromCart={removeFromCart} checkout={clearCart} />} />
 
-          {/* Pass Book Functions to Admin Dashboard */}
           <Route 
             path="/admin/*" 
             element={
@@ -123,14 +157,13 @@ function App() {
             } 
           />
           
-          {/* Pass Books to Customer Dashboard for searching */}
           <Route 
             path="/customer/*" 
             element={
               <ProtectedRoute requiredRole="customer">
                 <CustomerDashboard 
                   user={user} 
-                  books={books} // <--- Pass Global Books here
+                  books={books} 
                   cart={cart} 
                   addToCart={addToCart} 
                   removeFromCart={removeFromCart} 

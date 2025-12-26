@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 
 // Accept 'books' and 'addToCart' from App.js
 function Home({ books, addToCart }) {
@@ -7,21 +6,29 @@ function Home({ books, addToCart }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredBooks, setFilteredBooks] = useState([]);
 
-  // Update filtered books whenever the 'books' prop changes or search changes
+  // Update filtered books whenever the 'books' prop changes
   useEffect(() => {
-    if (!books) return;
-    setFilteredBooks(books);
+    // If books is valid (an array), use it. Otherwise, default to empty array.
+    if (Array.isArray(books)) {
+      setFilteredBooks(books);
+    } else {
+      setFilteredBooks([]);
+    }
   }, [books]);
 
   const handleSearch = (e) => {
     e.preventDefault();
+    // Safety check: if books isn't an array, we can't search
+    if (!Array.isArray(books)) return;
+
     if (!searchTerm.trim()) {
       setFilteredBooks(books);
       return;
     }
 
     const results = books.filter(book => {
-      const value = book[searchType]?.toString().toLowerCase() || '';
+      // Safety check: ensure the field exists before calling toString
+      const value = book[searchType] ? book[searchType].toString().toLowerCase() : '';
       return value.includes(searchTerm.toLowerCase());
     });
     setFilteredBooks(results);
@@ -63,7 +70,8 @@ function Home({ books, addToCart }) {
               className="btn-secondary"
               onClick={() => {
                 setSearchTerm('');
-                setFilteredBooks(books);
+                // Only reset if books is an array
+                if(Array.isArray(books)) setFilteredBooks(books);
               }}
             >
               Clear
@@ -71,13 +79,10 @@ function Home({ books, addToCart }) {
           </form>
         </div>
 
-        {/* Books Grid */}
+        {/* Books Grid - NOW WITH CRASH PROTECTION */}
         <div className="grid">
-          {filteredBooks.length === 0 ? (
-            <p style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
-              No books found matching your search.
-            </p>
-          ) : (
+          {/* 1. Check if filteredBooks is a valid array AND has items */}
+          {Array.isArray(filteredBooks) && filteredBooks.length > 0 ? (
             filteredBooks.map(book => (
               <div key={book.isbn} className="book-card">
                 <div style={{ fontSize: '4rem', textAlign: 'center', marginBottom: '1rem' }}>📖</div>
@@ -87,11 +92,12 @@ function Home({ books, addToCart }) {
                 <p><strong>Category:</strong> {book.category}</p>
                 <p className="price">${book.price}</p>
                 
-                <p style={{ color: book.stock > 0 ? '#27ae60' : '#e74c3c', fontWeight: 'bold' }}>
-                  {book.stock > 0 ? `In Stock (${book.stock})` : 'Out of Stock'}
+                {/* Check for stock_quantity (DB name) OR stock (Mock name) to be safe */}
+                <p style={{ color: (book.stock_quantity || book.stock) > 0 ? '#27ae60' : '#e74c3c', fontWeight: 'bold' }}>
+                  {(book.stock_quantity || book.stock) > 0 ? `In Stock (${book.stock_quantity || book.stock})` : 'Out of Stock'}
                 </p>
 
-                {book.stock > 0 && (
+                {(book.stock_quantity || book.stock) > 0 && (
                   <button 
                     className="btn" 
                     onClick={() => addToCart(book)}
@@ -102,6 +108,13 @@ function Home({ books, addToCart }) {
                 )}
               </div>
             ))
+          ) : (
+            /* 2. Fallback: If it's not an array or empty, show a safe message */
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
+              {!Array.isArray(filteredBooks) 
+                ? "Error: Received invalid data from server." 
+                : "No books available."}
+            </p>
           )}
         </div>
       </div>
