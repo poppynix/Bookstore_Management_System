@@ -149,20 +149,21 @@ const handleUpdateSubmit = async (e) => {
 };
 
 
-  const handleConfirmOrder = (orderId) => {
-    const order = orders.find(o => o.order_id === orderId);
-    if (order) {
-      setOrders(orders.map(o => o.order_id === orderId ? { ...o, status: 'Confirmed' } : o));
-      const bookToUpdate = books.find(b => b.isbn === order.isbn);
-      if (bookToUpdate) {
-         updateBook({
-            ...bookToUpdate,
-            stock_quantity: bookToUpdate.stock_quantity + order.quantity
-         });
-      }
-      alert(`Order #${orderId} confirmed!`);
-    }
-  };
+const handleConfirmOrder = async (orderId) => {
+  try {
+    // This talks to the new backend route we just made
+    await axios.put(`http://localhost:8800/api/admin/confirm-order/${orderId}`);
+    
+    alert("Books added to stock!");
+    
+    // Refresh the UI
+    fetchPublisherOrders(); 
+    // Trigger a refresh of the main books list too
+    window.location.reload(); 
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const renderBooksManagement = () => (
     <div className="card">

@@ -172,6 +172,48 @@ app.get('/api/admin/publisher-orders', (req, res) => {
         res.json(data);
     });
 });
+app.put('/api/admin/confirm-order/:orderId', (req, res) => {
+    const { orderId } = req.params;
+
+    // 1. Find the order to get the ISBN and Quantity
+    db.query('SELECT * FROM book_orders WHERE o_id = ?', [orderId], (err, result) => {
+        if (err || result.length === 0) return res.status(404).json("Order not found");
+
+        const { isbn, quantity } = result[0];
+
+        // 2. Mark order as Confirmed and update the Book Stock
+        db.query('UPDATE book_orders SET status = "Confirmed" WHERE o_id = ?', [orderId], (err) => {
+            db.query('UPDATE books SET stock_quantity = stock_quantity + ? WHERE isbn = ?', [quantity, isbn], (err) => {
+                if (err) return res.status(500).json(err);
+                res.json("Stock updated successfully!");
+            });
+        });
+    });
+});
+
+
+app.put('/api/customers/:username', (req, res) => {
+    const { username } = req.params;
+    // These names must match the names in your profileData state!
+    const { firstName, lastName, email, phone, address } = req.body;
+
+    const q = `
+        UPDATE customers 
+        SET first_name = ?, last_name = ?, email = ?, phone = ?, shipping_address = ? 
+        WHERE username = ?
+    `;
+
+    const values = [firstName, lastName, email, phone, address, username];
+
+    db.query(q, values, (err, result) => {
+        if (err) {
+            console.error("❌ SQL Error:", err.sqlMessage);
+            return res.status(500).json(err);
+        }
+        console.log("✅ Profile updated for:", username);
+        return res.json("Profile updated successfully!");
+    });
+});
 
 app.listen(8800, () => {
     console.log("✅ Backend server is running on port 8800!");
